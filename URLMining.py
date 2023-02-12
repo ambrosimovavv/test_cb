@@ -10,6 +10,7 @@ import datetime
 class URLMining:
 
     doc_name = ''
+# конструктор
 
     def __init__(self):
         self.connection = None
@@ -18,12 +19,15 @@ class URLMining:
             print("connection successful")
         except Error as e:
             print(f"the error '{e}' occurred")
+# метод парсера
 
     def parse_verify(self, text, doc_name):
         self.doc_name = doc_name
+        # регулярное выражение для поиска ссылок
         regex = re.compile(r'(https?://\S+)', flags=re.IGNORECASE)
+        # создание списка только из ссылок из текста
         links_list = regex.findall(text)
-        print(links_list)
+        # создание таблицы для текущего документа
         cursor = self.connection.cursor()
         create_table = """
             CREATE TABLE IF NOT EXISTS """ + str(doc_name) + """(
@@ -35,7 +39,9 @@ class URLMining:
         """
         cursor.execute(create_table)
         self.connection.commit()
+        # проверка всех ссылок из списка
         for i in range(len(links_list)):
+
             req = Request(links_list[i])
             zap = """
             INSERT INTO """ + doc_name + """(link, result, date)
@@ -43,9 +49,13 @@ class URLMining:
             """
             try:
                 urlopen(req)
+                # если подключиться можно, то в таблицу добавляется запись
+                # с ссылкой, результатом и датой, когда была проверка
                 cursor.execute(zap, (links_list[i], "ok", datetime.datetime.now()))
                 self.connection.commit()
             except URLError as e:
+                # если подключиться нельзя, то в таблицу добавляется запись
+                # с ссылкой, ошибкой и датой, когда была проверка
                 cursor.execute(zap, (links_list[i], str(e), datetime.datetime.now()))
                 self.connection.commit()
         self.connection.close()
